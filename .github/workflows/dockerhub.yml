@@ -1,35 +1,177 @@
 name: Docker Hub CI
 
+concurrency:
+  group: docker-hub-ci-${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
 on:
   pull_request:
     branches: [ "main" ]
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
 
 permissions:
   contents: read
 
 jobs:
-  docker:
-    name: Build and Push Docker Image
+  validate-release:
+    name: Validate Release Metadata
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Validate repository consistency
+        run: ./scripts/validate-release.sh
+
+      - name: Validate git tag against release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: ./scripts/validate-release.sh "${GITHUB_REF_NAME}"
+
+  build-test:
+    name: Build and Smoke Test
+    runs-on: ubuntu-latest
+    needs: validate-release
+    env:
+      TEST_IMAGE_ARCHIVE: ${{ github.workspace }}/.workflow-artifacts/rabbitmq-dedup-amd64.tar
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      # Log in to Docker Hub
+      - name: Prepare artifact directory
+        run: mkdir -p "$(dirname "${TEST_IMAGE_ARCHIVE}")"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+        with:
+          install: true
+
+      - name: Build image
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          platforms: linux/amd64
+          tags: rabbitmq-dedup:test
+          outputs: type=docker,dest=${{ env.TEST_IMAGE_ARCHIVE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Load image archive
+        run: docker load -i "${TEST_IMAGE_ARCHIVE}"
+
+      - name: Smoke test image
+        run: ./scripts/smoke-test.sh rabbitmq-dedup:test
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: rabbitmq-dedup:test
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          format: table
+          hide-progress: true
+
+      - name: Upload tested image archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: rabbitmq-dedup-amd64-image
+          path: ${{ env.TEST_IMAGE_ARCHIVE }}
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish Docker Image
+    runs-on: ubuntu-latest
+    needs:
+      - build-test
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: rabbitmq-dedup-amd64-image
+          path: ${{ github.workspace }}/.workflow-artifacts
+
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
-      # Build and push the Docker image to Docker Hub
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      - name: Load tested image archive
+        run: docker load -i "${GITHUB_WORKSPACE}/.workflow-artifacts/rabbitmq-dedup-amd64.tar"
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
-          context: .
-          push: true
-          tags: mpolit/rabbitmq-dedup:latest
+          images: mpolit/rabbitmq-dedup
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=4.2,enable={{is_default_branch}}
+            type=sha,prefix=git-
+            type=semver,pattern={{version}}
+
+      - name: Retag tested image
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          printf '%s\n' "${IMAGE_TAGS}" | while IFS= read -r tag; do
+            [ -n "${tag}" ] || continue
+            docker tag rabbitmq-dedup:test "${tag}"
+          done
+
+      - name: Push tested image tags
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          printf '%s\n' "${IMAGE_TAGS}" | while IFS= read -r tag; do
+            [ -n "${tag}" ] || continue
+            docker push "${tag}"
+          done
+
+      - name: Resolve promoted image digest
+        id: image
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE_NAME: docker.io/mpolit/rabbitmq-dedup
+        run: |
+          first_tag=$(printf '%s\n' "${IMAGE_TAGS}" | sed '/^$/d' | head -n1)
+          [ -n "${first_tag}" ] || exit 1
+          repo_digest=$(docker image inspect "${first_tag}" --format '{{join .RepoDigests "\n"}}' | grep "^${IMAGE_NAME}@sha256:" | head -n1 || true)
+          [ -n "${repo_digest}" ] || exit 1
+          echo "subject-name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "subject-digest=${repo_digest#*@}" >> "${GITHUB_OUTPUT}"
+
+      - name: Generate image SBOM
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          scan-type: image
+          image-ref: rabbitmq-dedup:test
+          scanners: vuln
+          format: spdx-json
+          output: ${{ github.workspace }}/.workflow-artifacts/rabbitmq-dedup.spdx.json
+          hide-progress: true
+
+      - name: Attest promoted image provenance
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-name: ${{ steps.image.outputs.subject-name }}
+          subject-digest: ${{ steps.image.outputs.subject-digest }}
+          push-to-registry: true
+
+      - name: Attest promoted image SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-name: ${{ steps.image.outputs.subject-name }}
+          subject-digest: ${{ steps.image.outputs.subject-digest }}
+          sbom-path: ${{ github.workspace }}/.workflow-artifacts/rabbitmq-dedup.spdx.json
+          push-to-registry: true

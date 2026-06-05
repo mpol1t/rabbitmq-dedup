@@ -1,11 +1,18 @@
-FROM rabbitmq:4.0.4-management
+ARG RABBITMQ_VERSION=4.2.7-management
+ARG RABBITMQ_DIGEST=sha256:be47482d5058d93be35021ead39614c25ceeb6c0f580e31ce98536e8d1326af5
+
+FROM rabbitmq:${RABBITMQ_VERSION}@${RABBITMQ_DIGEST}
 
 # Copy the plugins into the RabbitMQ plugins directory
-COPY plugins/elixir-1.16.3.ez $RABBITMQ_HOME/plugins/
-COPY plugins/rabbitmq_message_deduplication-0.6.4.ez $RABBITMQ_HOME/plugins/
+COPY plugins/checksums.txt /tmp/plugin-checksums.txt
+COPY plugins/elixir-1.18.4.ez $RABBITMQ_HOME/plugins/
+COPY plugins/logger-1.18.4.ez $RABBITMQ_HOME/plugins/
+COPY plugins/rabbitmq_message_deduplication-0.7.3.ez $RABBITMQ_HOME/plugins/
 
-# Change ownership to rabbitmq for all plugins and enable required plugins
-RUN chown -R rabbitmq:rabbitmq $RABBITMQ_HOME/plugins && \
+# Verify vendored plugin artifacts before enabling them.
+RUN cd $RABBITMQ_HOME/plugins && \
+    sha256sum -c /tmp/plugin-checksums.txt && \
+    chown -R rabbitmq:rabbitmq $RABBITMQ_HOME/plugins && \
     rabbitmq-plugins enable --offline \
     rabbitmq_message_deduplication \
     rabbitmq_shovel \
