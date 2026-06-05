@@ -146,6 +146,7 @@ jobs:
         run: |
           first_tag=$(printf '%s\n' "${IMAGE_TAGS}" | sed '/^$/d' | head -n1)
           [ -n "${first_tag}" ] || exit 1
+          docker pull "${first_tag}" >/dev/null
           repo_digest=$(docker image inspect "${first_tag}" --format '{{join .RepoDigests "\n"}}' | grep "^${IMAGE_NAME}@sha256:" | head -n1 || true)
           [ -n "${repo_digest}" ] || exit 1
           echo "subject-name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
