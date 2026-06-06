@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a defect in the image, build, runtime behavior, or release process
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not use this template for private security disclosures. Follow the guidance in `SECURITY.md`.
+  - type: input
+    id: image_tag
+    attributes:
+      label: Image tag or digest
+      description: Include the exact tag or digest if known
+      placeholder: mpolit/rabbitmq-dedup:latest
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Describe the problem clearly
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the exact steps or commands to reproduce the issue
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Docker version, host OS, architecture, and any other relevant details
+    validations:
+      required: false
