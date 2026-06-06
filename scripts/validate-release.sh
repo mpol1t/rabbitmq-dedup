@@ -28,7 +28,8 @@ readme_declares_version() {
 
 rabbitmq_version=$(sed -n 's/^ARG RABBITMQ_VERSION=\(.*\)$/\1/p' "$DOCKERFILE")
 [ -n "$rabbitmq_version" ] || fail "RABBITMQ_VERSION not found in Dockerfile"
-rabbitmq_series_version="${rabbitmq_version%-management}"
+rabbitmq_series_version="${rabbitmq_version%%-management*}"
+rabbitmq_release_tag="${rabbitmq_series_version}-alpine"
 
 rabbitmq_digest=$(sed -n 's/^ARG RABBITMQ_DIGEST=\(.*\)$/\1/p' "$DOCKERFILE")
 [ -n "$rabbitmq_digest" ] || fail "RABBITMQ_DIGEST not found in Dockerfile"
@@ -39,11 +40,11 @@ grep -Fq -- "- RabbitMQ base digest: \`${rabbitmq_digest}\`" "$README_FILE" || \
 readme_declares_version "RabbitMQ" "$rabbitmq_version" || \
   fail "README current version does not match Dockerfile RabbitMQ version ${rabbitmq_version}"
 
-grep -Fq -- "docker pull mpolit/rabbitmq-dedup:${rabbitmq_series_version}" "$README_FILE" || \
-  fail "README pull example does not include ${rabbitmq_series_version}"
+grep -Fq -- "docker pull mpolit/rabbitmq-dedup:${rabbitmq_release_tag}" "$README_FILE" || \
+  fail "README pull example does not include ${rabbitmq_release_tag}"
 
-grep -Fq -- "image: mpolit/rabbitmq-dedup:${rabbitmq_series_version}" "$README_FILE" || \
-  fail "README compose example does not include ${rabbitmq_series_version}"
+grep -Fq -- "image: mpolit/rabbitmq-dedup:${rabbitmq_release_tag}" "$README_FILE" || \
+  fail "README compose example does not include ${rabbitmq_release_tag}"
 
 mapfile -t docker_plugins < <(sed -n 's|^COPY plugins/\(.*\.ez\) .*|\1|p' "$DOCKERFILE")
 [ "${#docker_plugins[@]}" -gt 0 ] || fail "no plugin artifacts declared in Dockerfile"
