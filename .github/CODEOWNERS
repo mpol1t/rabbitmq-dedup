@@ -1,0 +1,6 @@
+* @mpol1t
+
+.github/workflows/* @mpol1t
+Dockerfile @mpol1t
+scripts/* @mpol1t
+plugins/* @mpol1t
