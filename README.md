@@ -4,15 +4,15 @@ This repository builds a RabbitMQ image with the third-party message deduplicati
 
 ## Current Versions
 
-- RabbitMQ: `4.2.7-management`
-- RabbitMQ base digest: `sha256:be47482d5058d93be35021ead39614c25ceeb6c0f580e31ce98536e8d1326af5`
+- RabbitMQ: `4.2.7-management-alpine`
+- RabbitMQ base digest: `sha256:c85c78e31d937896aa9060b33a1a21313771ab0cd69bd012f092422c25987f07`
 - Dedup plugin: `0.7.3`
 - Elixir runtime plugin: `1.18.4`
 - Logger runtime plugin: `1.18.4`
 
 ## Compatibility Note
 
-As of 2026-06-05, upstream RabbitMQ has newer `4.3.x` releases, but the latest published `rabbitmq-message-deduplication` artifacts only cover RabbitMQ through `4.2.x`. This image therefore tracks the latest compatible RabbitMQ release instead of the absolute latest RabbitMQ release.
+As of 2026-06-06, upstream RabbitMQ has newer `4.3.x` releases, but the latest published `rabbitmq-message-deduplication` artifacts only cover RabbitMQ through `4.2.x`. This image therefore tracks the latest compatible RabbitMQ release instead of the absolute latest RabbitMQ release.
 
 ## Included Plugins
 
@@ -24,7 +24,7 @@ As of 2026-06-05, upstream RabbitMQ has newer `4.3.x` releases, but the latest p
 
 ```bash
 docker pull mpolit/rabbitmq-dedup:latest
-docker pull mpolit/rabbitmq-dedup:4.2.7
+docker pull mpolit/rabbitmq-dedup:4.2.7-alpine
 ```
 
 ## Build the Image Locally
@@ -82,7 +82,7 @@ docker run -d \
 ```yaml
 services:
   rabbitmq:
-    image: mpolit/rabbitmq-dedup:4.2.7
+    image: mpolit/rabbitmq-dedup:4.2.7-alpine
     container_name: rabbitmq-dedup
     env_file:
       - ./rabbitmq-dedup.env
@@ -142,6 +142,7 @@ Current security controls in this repo:
 - CI blocks releases on `HIGH` and `CRITICAL` image vulnerabilities
 - the publish job promotes the exact tested `linux/amd64` image artifact instead of rebuilding it
 - the promoted image receives GitHub attestations for provenance and SBOM data
+- published tags identify the Alpine variant explicitly instead of relying on ambiguous rolling distro assumptions
 
 Recommended production hardening:
 
@@ -167,9 +168,8 @@ The GitHub Actions workflow now:
 - fails CI on actionable `HIGH` and `CRITICAL` image vulnerabilities
 - validates and publishes the exact tested `linux/amd64` image artifact
 - publishes GitHub provenance and SBOM attestations for the promoted image
-- publishes rolling `latest` and `4.2` tags from `main`
-- publishes immutable tags from git tags such as `v4.2.7`
-- publishes `git-<sha>` tags for commit-level traceability
+- publishes rolling `latest` and `4.2-alpine` tags from `main`
+- publishes immutable tags from git tags such as `v4.2.7` as `4.2.7-alpine`
 
 Recommended release flow:
 
