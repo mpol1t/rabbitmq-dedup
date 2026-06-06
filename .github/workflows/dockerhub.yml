@@ -141,13 +141,14 @@ jobs:
         id: image
         env:
           IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE_NAME: docker.io/mpolit/rabbitmq-dedup
         run: |
           first_tag=$(printf '%s\n' "${IMAGE_TAGS}" | sed '/^$/d' | head -n1)
           [ -n "${first_tag}" ] || exit 1
           docker pull "${first_tag}" >/dev/null
           repo_digest=$(docker image inspect "${first_tag}" --format '{{join .RepoDigests "\n"}}' | sed '/^$/d' | head -n1)
           [ -n "${repo_digest}" ] || exit 1
-          echo "subject-name=${repo_digest%@*}" >> "${GITHUB_OUTPUT}"
+          echo "subject-name=${IMAGE_NAME}" >> "${GITHUB_OUTPUT}"
           echo "subject-digest=${repo_digest#*@}" >> "${GITHUB_OUTPUT}"
 
       - name: Generate image SBOM
