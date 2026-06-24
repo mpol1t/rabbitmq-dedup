@@ -4,8 +4,8 @@ This repository builds a RabbitMQ image with the third-party message deduplicati
 
 ## Current Versions
 
-- RabbitMQ: `4.2.7-management-alpine`
-- RabbitMQ base digest: `sha256:c85c78e31d937896aa9060b33a1a21313771ab0cd69bd012f092422c25987f07`
+- RabbitMQ: `4.2.8-management-alpine`
+- RabbitMQ base digest: `sha256:797068c77460c6ccdd4750e56d7fe3f3296e73c82f44e7d4d5b85164d5dc931e` (`linux/amd64`)
 - Dedup plugin: `0.7.3`
 - Elixir runtime plugin: `1.18.4`
 - Logger runtime plugin: `1.18.4`
@@ -24,7 +24,7 @@ As of 2026-06-06, upstream RabbitMQ has newer `4.3.x` releases, but the latest p
 
 ```bash
 docker pull mpolit/rabbitmq-dedup:latest
-docker pull mpolit/rabbitmq-dedup:4.2.7-alpine
+docker pull mpolit/rabbitmq-dedup:4.2.8-alpine
 ```
 
 ## Build the Image Locally
@@ -32,7 +32,7 @@ docker pull mpolit/rabbitmq-dedup:4.2.7-alpine
 ```bash
 git clone https://github.com/mpol1t/rabbitmq-dedup.git
 cd rabbitmq-dedup
-docker build -t rabbitmq-dedup:local .
+docker build --platform linux/amd64 -t rabbitmq-dedup:local .
 ```
 
 The Dockerfile pins the RabbitMQ base image by digest for reproducible rebuilds.
@@ -82,7 +82,7 @@ docker run -d \
 ```yaml
 services:
   rabbitmq:
-    image: mpolit/rabbitmq-dedup:4.2.7-alpine
+    image: mpolit/rabbitmq-dedup:4.2.8-alpine
     container_name: rabbitmq-dedup
     env_file:
       - ./rabbitmq-dedup.env
@@ -120,8 +120,9 @@ Override `PLUGIN_RELEASE`, `PLUGIN_BUNDLE`, or `PLUGIN_SHA256` if you need to ta
 Build and run the local smoke test:
 
 ```bash
-docker build -t rabbitmq-dedup:local .
-./scripts/smoke-test.sh rabbitmq-dedup:local
+docker build --platform linux/amd64 -t rabbitmq-dedup:local .
+DOCKER_PLATFORM=linux/amd64 ./scripts/smoke-test.sh rabbitmq-dedup:local
+./scripts/scan-image.sh rabbitmq-dedup:local
 ```
 
 The smoke test:
@@ -156,7 +157,7 @@ Recommended production hardening:
 Run the same vulnerability scan locally if needed:
 
 ```bash
-trivy image --severity HIGH,CRITICAL rabbitmq-dedup:local
+./scripts/scan-image.sh rabbitmq-dedup:local
 ```
 
 ## CI/CD
@@ -169,13 +170,13 @@ The GitHub Actions workflow now:
 - validates and publishes the exact tested `linux/amd64` image artifact
 - publishes GitHub provenance and SBOM attestations for the promoted image
 - publishes rolling `latest` and `4.2-alpine` tags from `main`
-- publishes immutable tags from git tags such as `v4.2.7` as `4.2.7-alpine`
+- publishes immutable tags from git tags such as `v4.2.8` as `4.2.8-alpine`
 
 Recommended release flow:
 
 ```bash
-git tag -a v4.2.7 -m "rabbitmq-dedup 4.2.7"
-git push origin v4.2.7
+git tag -a v4.2.8 -m "rabbitmq-dedup 4.2.8"
+git push origin v4.2.8
 ```
 
 ## License
