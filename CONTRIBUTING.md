@@ -18,10 +18,10 @@ Force-pushing feature branches is acceptable when cleaning up branch history for
 Run the repository checks locally where applicable:
 
 ```bash
-docker build -t rabbitmq-dedup:local .
+docker build --platform linux/amd64 -t rabbitmq-dedup:local .
 ./scripts/validate-release.sh
-./scripts/smoke-test.sh rabbitmq-dedup:local
-docker scout cves rabbitmq-dedup:local --only-severity critical,high --format packages
+DOCKER_PLATFORM=linux/amd64 ./scripts/smoke-test.sh rabbitmq-dedup:local
+./scripts/scan-image.sh rabbitmq-dedup:local
 ```
 
 If your change affects vendored plugins, also run:
@@ -67,8 +67,8 @@ v<major>.<minor>.<patch>
 Example:
 
 ```bash
-git tag -a v4.2.7 -m "rabbitmq-dedup 4.2.7"
-git push origin v4.2.7
+git tag -a v4.2.8 -m "rabbitmq-dedup 4.2.8"
+git push origin v4.2.8
 ```
 
 Do not create or move release tags casually.
