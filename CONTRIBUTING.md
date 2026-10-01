@@ -67,8 +67,8 @@ v<major>.<minor>.<patch>
 Example:
 
 ```bash
-git tag -a v4.2.8 -m "rabbitmq-dedup 4.2.8"
-git push origin v4.2.8
+git tag -a v4.2.9 -m "rabbitmq-dedup 4.2.9"
+git push origin v4.2.9
 ```
 
 Do not create or move release tags casually.
