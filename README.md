@@ -5,7 +5,7 @@ This repository builds a RabbitMQ image with the third-party message deduplicati
 ## Current Versions
 
 - RabbitMQ: `4.2.9-management-alpine`
-- RabbitMQ base digest: `sha256:97a167ef716a2c8799525d672c70896920c5415e2221418c0627603852dfcfb9` (`linux/amd64`)
+- RabbitMQ base digest: `sha256:69781e1c9c8cc04dfc373f9e7ddee76b8010cdf3946e073d69385dbc9cf98e60` (`linux/amd64`)
 - Dedup plugin: `0.7.3`
 - Elixir runtime plugin: `1.18.4`
 - Logger runtime plugin: `1.18.4`
