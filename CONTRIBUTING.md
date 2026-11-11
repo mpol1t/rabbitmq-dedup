@@ -20,6 +20,7 @@ Run the repository checks locally where applicable:
 ```bash
 docker build --platform linux/amd64 -t rabbitmq-dedup:local .
 ./scripts/validate-release.sh
+python3 ./scripts/test-base-updates.py
 DOCKER_PLATFORM=linux/amd64 ./scripts/smoke-test.sh rabbitmq-dedup:local
 ./scripts/scan-image.sh rabbitmq-dedup:local
 ```
