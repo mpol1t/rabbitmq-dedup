@@ -1,7 +1,4 @@
-ARG RABBITMQ_VERSION=4.2.9-management-alpine
-ARG RABBITMQ_DIGEST=sha256:69781e1c9c8cc04dfc373f9e7ddee76b8010cdf3946e073d69385dbc9cf98e60
-
-FROM rabbitmq:${RABBITMQ_VERSION}@${RABBITMQ_DIGEST}
+FROM rabbitmq:4.2.9-management-alpine@sha256:69781e1c9c8cc04dfc373f9e7ddee76b8010cdf3946e073d69385dbc9cf98e60
 
 # Copy the plugins into the RabbitMQ plugins directory
 COPY plugins/checksums.txt /tmp/plugin-checksums.txt

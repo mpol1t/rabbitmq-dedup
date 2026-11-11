@@ -24,7 +24,7 @@ As of 2026-06-06, upstream RabbitMQ has newer `4.3.x` releases, but the latest p
 
 ```bash
 docker pull mpolit/rabbitmq-dedup:latest
-docker pull mpolit/rabbitmq-dedup:4.2.9-alpine
+docker pull mpolit/rabbitmq-dedup:4.2-alpine
 ```
 
 ## Build the Image Locally
@@ -36,6 +36,8 @@ docker build --platform linux/amd64 -t rabbitmq-dedup:local .
 ```
 
 The Dockerfile pins the RabbitMQ base image by digest for reproducible rebuilds.
+
+Dependabot checks the literal image reference daily and proposes digest refreshes and patch updates within RabbitMQ 4.2.x. Minor and major updates require a deliberate compatibility review. CI derives the expected RabbitMQ version from the Dockerfile, smoke-tests the broker and plugins, and scans the built image before publication. The `4.2-alpine` tag follows tested builds from `main`; use a published version tag or image digest when deployment reproducibility is required.
 
 ## Run the Container
 
@@ -82,7 +84,7 @@ docker run -d \
 ```yaml
 services:
   rabbitmq:
-    image: mpolit/rabbitmq-dedup:4.2.9-alpine
+    image: mpolit/rabbitmq-dedup:4.2-alpine
     container_name: rabbitmq-dedup
     env_file:
       - ./rabbitmq-dedup.env

@@ -6,7 +6,8 @@ CONTAINER_NAME="rabbitmq-dedup-smoke-${RANDOM}-${RANDOM}"
 RABBITMQ_USER="${RABBITMQ_USER:-smoke}"
 RABBITMQ_PASS="${RABBITMQ_PASS:-smoke-test-password}"
 WAIT_SECONDS="${WAIT_SECONDS:-90}"
-EXPECTED_RABBITMQ_VERSION="${EXPECTED_RABBITMQ_VERSION:-4.2.9}"
+ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+EXPECTED_RABBITMQ_VERSION="${EXPECTED_RABBITMQ_VERSION:-$("$ROOT_DIR/scripts/read-rabbitmq-version.sh")}"
 DOCKER_PLATFORM="${DOCKER_PLATFORM:-}"
 START_TIME=$(date +%s)
 TMP_DIR=$(mktemp -d)
@@ -38,6 +39,8 @@ trap 'status=$?; if [ $status -ne 0 ]; then dump_logs; fi; cleanup' EXIT
 require_command curl
 require_command docker
 require_command python3
+
+python3 "$ROOT_DIR/scripts/test-base-updates.py"
 
 rabbitmqadmin() {
   docker exec "$CONTAINER_NAME" rabbitmqadmin \
