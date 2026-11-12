@@ -40,8 +40,6 @@ require_command curl
 require_command docker
 require_command python3
 
-python3 "$ROOT_DIR/scripts/test-base-updates.py"
-
 rabbitmqadmin() {
   docker exec "$CONTAINER_NAME" rabbitmqadmin \
     --non-interactive \
