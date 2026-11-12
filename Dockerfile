@@ -1,4 +1,4 @@
-FROM rabbitmq:4.2.9-management-alpine@sha256:69781e1c9c8cc04dfc373f9e7ddee76b8010cdf3946e073d69385dbc9cf98e60
+FROM rabbitmq:4.2.9-management-alpine@sha256:77ca2ba3621a95208918e6e331199a6c81129690bf7fc570dc61b6e64726840a
 
 # Copy the plugins into the RabbitMQ plugins directory
 COPY plugins/checksums.txt /tmp/plugin-checksums.txt
